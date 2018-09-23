@@ -68,22 +68,20 @@ def update_row(row, new_name, width, height, tag_x, tag_y, tag_w, tag_h):
 #def scale_img(im_name, image, scales, coordinate):
 def scale_img(tags_info, image, scales, img_rows):
     height, width = image.shape[:2]
-    row_num = 0
+    #row_num = 0
     new_rows = []
-    for img_row in img_rows:
-        print("img_row_for:", img_row)
-        x1, y1, x2, y2 = tags_info[row_num][0:4] #the last one is not included. that means this is indices 0, 1, 2, 3
+    im_name = img_rows[0][8][:img_rows[0][8].find('JPG')]
+    for row_count in range(len(img_rows)):
+        print(img_rows[row_count])
+        x1, y1, x2, y2 = tags_info[row_count][0:4] #the last one is not included. that means this is indices 0, 1, 2, 3
         im = cv2.rectangle(image,(x1, y1), (x2, y2), (0, 0, 255), 3)
         cv2.imwrite("bla.jpg", im)
-        print(x1, y1, x2, y2)
-        row_num += 1
         new_im_x1 = random.randint(0, x1)
         new_im_y1 = random.randint(0, y1)
         for scale in scales:
             new_im_h = int(scale * height) 
             new_im_w = int(scale * width) 
             if x2 - x1 > new_im_w or y2 - y1 > new_im_h: #if the tags itself is bigger than this cut/scaled part of the image, ignore it
-                print("scale: ", scale)
                 continue
             while new_im_y1 + new_im_h < y2 or new_im_x1 + new_im_w < x2:
                 new_im_x1 = random.randint(0, x1)
@@ -95,14 +93,17 @@ def scale_img(tags_info, image, scales, img_rows):
             scaled_im = cv2.resize(scaled_im, (width, height), interpolation = cv2.INTER_AREA)
             tag_x = (x1 - new_im_x1)* width/float(new_im_w)
             tag_y = (y1 - new_im_y1)* height/float(new_im_h)
+            '''
             tag_w = w * width/float(new_im_w)
             tag_h = h * height/float(new_im_h)
+            '''
+            tag_w =  (x2 - x1)/float(new_im_w)
+            tag_h = (y2- y1) /float(new_im_h)
 
             scaled_im = cv2.rectangle(scaled_im,(int(tag_x), int(tag_y)), (int(tag_x + tag_w), int(tag_y + tag_h)), (0, 0, 255), 3)
             new_name = im_name + str(scale) + ".JPG"
             cv2.imwrite(new_name, scaled_im)
-            print("img_row: \n", img_row)
-            new_rows.append(update_row(img_row[:], new_name, width, height, tag_x, tag_y, tag_w, tag_h))
+            new_rows.append(update_row(img_rows[row_count], new_name, width, height, tag_x, tag_y, tag_w, tag_h))
         return new_rows
 
 
@@ -147,7 +148,7 @@ img_name = ""
 
 for row in data:
     new_rows.append(row[:])
-    print("regular row: \n", row)
+    #print("regular row: \n", row)
     if first_row == 1:
         first_row = 0
         continue
@@ -173,7 +174,10 @@ for row in data:
         else:
             next_img +=1
             tags_info = img_tags_coor(img_w, img_h,img_rows)
-            rows = scale_img(tags_info, im_obj, scales, img_rows)
+            print(tags_info)
+            print(img_rows)
+            if next_img == 2:
+                rows = scale_img(tags_info, im_obj, scales, img_rows)
             #rows = scale_img(img_name, image, scales, coor)
             #append_rows(rows)
             img_name = name
