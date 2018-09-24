@@ -41,8 +41,8 @@ def flip_img(im_name, image, flip_flag, tag_coordinate, width, height):
 
     #TODO: x, y, width and height must be divided first (percentage)
     # Done, must be tested
-    return update_row(row, new_name, x1 / width, y1 / height, \
-        (x2 - x1) / width, (y2 - y1) / height)
+    loc = Coord(x1 / width, y1 / height, (x2 - x1) / width, (y2 - y1) / height)
+    return update_row(row[:], new_name, loc)
 
 
 def extract_coor_percentage(loc): #loc = row[3] = the column in csv that has the coordinate
@@ -176,13 +176,17 @@ def scale_img(tags_info, image, scales, img_rows):
             new_rows.append(row_to_add[:])
 
             for tag_loc in tags_info:
+                included_tag_name = tag_loc[4]
                 tag_loc = Coord(tag_loc[0], tag_loc[1], tag_loc[2], tag_loc[3])
                 if not tag_loc.isEqual(tag_coord) and is_included(tag_loc, new_img_coord):
                     included_tag = get_scaled_tag_coor(tag_loc, \
                         new_img_coord, width, height)
 
-                    new_rows.append(update_row(row_to_add[:], new_name, \
-                        included_tag.getInPercentages(width, height)))
+                    temp_row = update_row(row_to_add[:], new_name, \
+                        included_tag.getInPercentages(width, height))
+    
+                    temp_row[5] = included_tag_name 
+                    new_rows.append(temp_row)
 
     return new_rows
 
@@ -237,11 +241,11 @@ if __name__ == '__main__':
             image = cv2.imread(imgs_dir + row[8], cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
             height, width = image.shape[:2]
             coor = get_coordinate(width, height, location) # coor = [x1, y1, x2, y2]
-            ''' 
+
             new_rows.append(flip_img(name, image, 1, coor, width, height))
             new_rows.append(flip_img(name, image, 0, coor, width, height))
             new_rows.append(flip_img(name , image, -1, coor, width, height))
-            '''
+
             if img_name == name:
                 img_rows.append(row[:])
             elif img_name == "":
