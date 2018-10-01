@@ -15,14 +15,14 @@ def flip_img(im_name, image, flip_flag, tag_coordinate, width, height):
     w = x2 - x1
     h = y2 - y1 
     if flip_flag == 0:
-        flipped_img = cv2.rectangle(flipped,(int(x1), int(height - y1 -1 - h)), (int(x2), int(height - y2 - 1 + h)), (0, 0, 255), 3)
+        #flipped_img = cv2.rectangle(flipped,(int(x1), int(height - y1 -1 - h)), (int(x2), int(height - y2 - 1 + h)), (0, 0, 255), 3)
         x1 = int(x1)
         y1 = int(height - y1 -1 - h)
         x2 = int(x2)
         y2 = int(height - y2 - 1 + h)
         new_name = im_name + "fliped_y.JPG"
     elif flip_flag == 1:
-        flipped_img = cv2.rectangle(flipped,(int(width - x1 - 1 - w), int(y1)), (int(width - x2 - 1 + w), int(y2)), (0, 0, 255), 3)
+        #flipped_img = cv2.rectangle(flipped,(int(width - x1 - 1 - w), int(y1)), (int(width - x2 - 1 + w), int(y2)), (0, 0, 255), 3)
         x1 = int(width - x1 - 1 - w)
         y1 = int(y1)
         x2 = int(width - x2 - 1 + w)
@@ -30,18 +30,19 @@ def flip_img(im_name, image, flip_flag, tag_coordinate, width, height):
         new_name = im_name + "fliped_x.JPG"
     
     elif flip_flag == -1:
-        flipped_img = cv2.rectangle(flipped,(int(width - x1 - 1 - w),  int(height - y1 -1 - h)), (int(width - x2 - 1 + w), int(height - y2 -1 + h)), (0, 0, 255), 3)
+        #flipped_img = cv2.rectangle(flipped,(int(width - x1 - 1 - w),  int(height - y1 -1 - h)), (int(width - x2 - 1 + w), int(height - y2 -1 + h)), (0, 0, 255), 3)
         x1 = int(width - x1 - w -1)
         y1 = int(height - y1 -1 - h)
         x2 = int(width - x2 - 1 + w)
         y2 = int(height - y2 - 1 + h)
         new_name = im_name + "fliped_xy.JPG"
-
-    cv2.imwrite(new_name, flipped_img)
+    
+    #cv2.imwrite(new_name, flipped_img)
+    cv2.imwrite(new_name, flipped)
 
     #TODO: x, y, width and height must be divided first (percentage)
     # Done, must be tested
-    loc = Coord(x1 / width, y1 / height, (x2 - x1) / width, (y2 - y1) / height)
+    loc = Coord(x1 / float(width), y1 / float(height), x2 / float(width), y2 / float(height))
     return update_row(row[:], new_name, loc)
 
 
@@ -163,11 +164,11 @@ def scale_img(tags_info, image, scales, img_rows):
             scaled_im = cv2.resize(scaled_im, (width, height), interpolation = cv2.INTER_AREA)
 
             scaled_tag = get_scaled_tag_coor(tag_coord, new_img_coord, width, height)
-
+            '''
             # Draw rectangles
             scaled_im = cv2.rectangle(scaled_im, (int(scaled_tag.x1), int(scaled_tag.y1)),\
                  (int(scaled_tag.x2), int(scaled_tag.y2)), (0, 0, 255), 3)
-
+            '''
             new_name = im_name + tag + str(scale) + ".JPG"
             cv2.imwrite(new_name, scaled_im)
 
@@ -215,6 +216,9 @@ def img_tags_coor(width, height, lines):
         tags.append(coor)
     return tags #this is a list of lists [[x1, y1, x2, y2, tag1],[x1, y1, x2, y2, tag2]...]
 
+
+
+#################################
 if __name__ == '__main__':
     f = open(sys.argv[1])
     res_csv = sys.argv[2]
@@ -256,8 +260,10 @@ if __name__ == '__main__':
                 next_img +=1
                 tags_info = img_tags_coor(im_obj.shape[1], im_obj.shape[0],img_rows)
                 draw = im_obj
+                '''
                 for i in tags_info:
                     cv2.rectangle(draw, (i[0],i[1]), (i[2],i[3]), (0,0,255),3)
+                '''
                 cv2.imwrite(img_name + "JPG", draw)
                 rows = scale_img(tags_info, im_obj, scales, img_rows)
                 append_rows(rows)
