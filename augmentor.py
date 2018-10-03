@@ -1,11 +1,13 @@
 #flip, hori, verti, zoom, rotate, combination of these
-#python augmentor.py sorted.tags.csv new_csv /Users/sara/Downloads/forensic/all_imgs/
+#This does not work on da3-mrcnn because of PIL
+#~/repose/augmentation: python augmentor.py Mumm.20181001.correct.format.sorted.csv Mumm.20181001.augmented.csv MummImgs MummImgsAugm/
 from PIL import Image
 import csv
 import sys
 import json
 import random
 import cv2
+import os
 
 random.seed(10)
 
@@ -38,7 +40,7 @@ def flip_img(im_name, image, flip_flag, tag_coordinate, width, height):
         new_name = im_name + "fliped_xy.JPG"
     
     #cv2.imwrite(new_name, flipped_img)
-    cv2.imwrite(new_name, flipped)
+    cv2.imwrite(dest_dir + '/' + new_name, flipped)
 
     #TODO: x, y, width and height must be divided first (percentage)
     # Done, must be tested
@@ -170,7 +172,7 @@ def scale_img(tags_info, image, scales, img_rows):
                  (int(scaled_tag.x2), int(scaled_tag.y2)), (0, 0, 255), 3)
             '''
             new_name = im_name + tag + str(scale) + ".JPG"
-            cv2.imwrite(new_name, scaled_im)
+            cv2.imwrite(dest_dir + '/' + new_name, scaled_im)
 
             row_to_add = update_row(img_row, new_name, \
                 scaled_tag.getInPercentages(width, height))
@@ -220,9 +222,13 @@ def img_tags_coor(width, height, lines):
 
 #################################
 if __name__ == '__main__':
-    f = open(sys.argv[1])
-    res_csv = sys.argv[2]
-    imgs_dir = sys.argv[3]
+    f = open(sys.argv[1]) #csv to read from
+    res_csv = sys.argv[2] # csv to write at
+    imgs_dir = sys.argv[3] # read images from
+    dest_dir = sys.argv[4] # store augmented images at
+    if len(sys.argv) < 5:
+        print("Usage: python augmentor.py tags_to_red_from dir_to_read_imgs_from dir_to_store_imgs_at")
+        exit()
 
     data = csv.reader(f)
     new_rows = []
@@ -242,37 +248,36 @@ if __name__ == '__main__':
         else:
             name = row[8][ : row[8].find('JPG')]
             location = extract_coor_percentage(row[3])
-            image = cv2.imread(imgs_dir + row[8], cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
-            height, width = image.shape[:2]
-            coor = get_coordinate(width, height, location) # coor = [x1, y1, x2, y2]
+            if os.path.isfile(os.path.join(imgs_dir , row[8])):
+                image = cv2.imread(os.path.join(imgs_dir , row[8]), cv2.IMREAD_IGNORE_ORIENTATION | cv2.IMREAD_COLOR)
+                height, width = image.shape[:2]
+                coor = get_coordinate(width, height, location) # coor = [x1, y1, x2, y2]
 
-            new_rows.append(flip_img(name, image, 1, coor, width, height))
-            new_rows.append(flip_img(name, image, 0, coor, width, height))
-            new_rows.append(flip_img(name , image, -1, coor, width, height))
+                new_rows.append(flip_img(name, image, 1, coor, width, height))
+                new_rows.append(flip_img(name, image, 0, coor, width, height))
+                new_rows.append(flip_img(name , image, -1, coor, width, height))
 
-            if img_name == name:
-                img_rows.append(row[:])
-            elif img_name == "":
-                img_name = name
-                img_rows.append(row[:])
-                im_obj = image
-            else:
-                next_img +=1
-                tags_info = img_tags_coor(im_obj.shape[1], im_obj.shape[0],img_rows)
-                draw = im_obj
-                '''
-                for i in tags_info:
-                    cv2.rectangle(draw, (i[0],i[1]), (i[2],i[3]), (0,0,255),3)
-                '''
-                cv2.imwrite(img_name + "JPG", draw)
-                rows = scale_img(tags_info, im_obj, scales, img_rows)
-                append_rows(rows)
-                img_name = name
-                img_rows = []
-                img_rows.append(row[:])
-                im_obj = image
-                if next_img == 2:
-                    break
+                if img_name == name:
+                    img_rows.append(row[:])
+                elif img_name == "":
+                    img_name = name
+                    img_rows.append(row[:])
+                    im_obj = image
+                else:
+                    next_img +=1
+                    tags_info = img_tags_coor(im_obj.shape[1], im_obj.shape[0],img_rows)
+                    draw = im_obj
+                    '''
+                    for i in tags_info:
+                        cv2.rectangle(draw, (i[0],i[1]), (i[2],i[3]), (0,0,255),3)
+                    '''
+                    cv2.imwrite(dest_dir + '/' +  img_name + "JPG", draw)
+                    rows = scale_img(tags_info, im_obj, scales, img_rows)
+                    append_rows(rows)
+                    img_name = name
+                    img_rows = []
+                    img_rows.append(row[:])
+                    im_obj = image
 
     with open(res_csv, 'w') as output:
         writer = csv.writer(output, lineterminator = '\n')
