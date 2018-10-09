@@ -140,7 +140,10 @@ def scale_img(tags_info, image, scales, img_rows):
         for scale in scales:
             temp_w = int(scale * width) 
             temp_h = int(scale * height) 
-
+            '''
+            import bpython
+            bpython.embed(locals())
+            '''
             new_img_coord = Coord(new_im_x1, new_im_y1, new_im_x1 + temp_w, \
                 new_im_y1 + temp_h)
 
@@ -171,7 +174,7 @@ def scale_img(tags_info, image, scales, img_rows):
             scaled_im = cv2.rectangle(scaled_im, (int(scaled_tag.x1), int(scaled_tag.y1)),\
                  (int(scaled_tag.x2), int(scaled_tag.y2)), (0, 0, 255), 3)
             '''
-            new_name = im_name + tag + str(scale) + ".JPG"
+            new_name = im_name + '_'+ str(row_count -1)+ '_' + tag + str(scale) + ".JPG"
             cv2.imwrite(dest_dir + '/' + new_name, scaled_im)
 
             row_to_add = update_row(img_row, new_name, \
@@ -232,6 +235,7 @@ if __name__ == '__main__':
 
     data = csv.reader(f)
     new_rows = []
+    new_rows.append(['row_number','_id','user','location','image','tag','created','__v','image1'])
     first_row = 1
     scales = [0.3, 0.5, 0.8]
 
@@ -239,7 +243,6 @@ if __name__ == '__main__':
 
     img_rows = []
     img_name = ""
-
     for row in data:
         if first_row == 1:
             first_row = 0
@@ -272,13 +275,18 @@ if __name__ == '__main__':
                         cv2.rectangle(draw, (i[0],i[1]), (i[2],i[3]), (0,0,255),3)
                     '''
                     cv2.imwrite(dest_dir + '/' +  img_name + "JPG", draw)
+                    print("oumad inja")
                     rows = scale_img(tags_info, im_obj, scales, img_rows)
                     append_rows(rows)
                     img_name = name
                     img_rows = []
                     img_rows.append(row[:])
                     im_obj = image
-
+    if len(img_rows) > 0:
+        tags_info = img_tags_coor(im_obj.shape[1], im_obj.shape[0],img_rows)
+        cv2.imwrite(dest_dir + '/' +  img_name + "JPG", im_obj)
+        rows = scale_img(tags_info, im_obj, scales, img_rows)
+        append_rows(rows)
     with open(res_csv, 'w') as output:
         writer = csv.writer(output, lineterminator = '\n')
         writer.writerows(new_rows)
